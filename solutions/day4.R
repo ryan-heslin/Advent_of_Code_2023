@@ -22,9 +22,7 @@ draw <- function(cards, won) {
         draws <- held[[current]]
         result <- won[[current]]
         if (result > 0) {
-            received <- seq(current + 1, current + result, 1)
-            # Clamp to number of cards
-            received <- received[received <= n]
+            received <- seq(current + 1, min(current + result, n), 1)
             held[received] <- held[received] + draws
         }
     }

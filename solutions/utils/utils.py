@@ -1,9 +1,14 @@
 from functools import cache
 from itertools import product
+import re
 
 def split_lines(path):
     with open(path) as f:
         return [line.strip() for line in f]
+
+def split_groups(path):
+    with open(path) as f:
+        return f.read().split("\n\n") 
 
 def list_map(iter, func):
     return list(map(func, iter))
@@ -28,3 +33,6 @@ def neighbors(xmin, xmax, ymin, ymax, diag =  False):
         return frozenset(result)
     
     return result
+
+def scan_ints(line):
+    return map(int, re.split(r"\s+", line))
