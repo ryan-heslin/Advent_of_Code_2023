@@ -24,15 +24,7 @@ class Hand:
         self._count = Counter(cards)
         self.rank = self.ranks[tuple(sorted(self._count.values(), reverse=True))]
         if joker and (jokers := self._count[self.joker]) > 0:
-            ranks = {
-                (5,): 7,
-                (4, 1): 6,
-                (3, 2): 5,
-                (3, 1, 1): 4,
-                (2, 2, 1): 3,
-                (2, 1, 1, 1): 2,
-                (1, 1, 1, 1, 1): 1,
-            }
+            
             match (self.rank, jokers):
                 case (1, 1):
                     self.rank = 2
@@ -53,8 +45,6 @@ class Hand:
                 # 4 of a kind, full house
                 case (5, _) | (6, _):
                     self.rank = 7
-                case _:
-                    pass
 
     def __lt__(self, other):
         attr = "rank" if self.rank != other.rank else "cards"
