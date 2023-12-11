@@ -14,10 +14,10 @@ def list_map(iter, func):
     return list(map(func, iter))
 
 
-def neighbors(xmin, xmax, ymin, ymax, diag =  False):
+def neighbors(xmin, xmax, ymin, ymax, diag =  False, combos = None):
     """Cartesian neighbors"""
-
-    combos = product(range(-1, 2), range(-1, 2))
+    if combos is None:
+        combos = product(range(-1, 2), range(-1, 2))
     # Each combination of 1-step movements
     shifts = {complex(x, y) for x, y in combos if (x != 0 or y != 0) and (diag or (x== 0 or y == 0))}
     print(shifts)
