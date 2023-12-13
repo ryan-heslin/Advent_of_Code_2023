@@ -24,15 +24,18 @@ def neighbors(xmin, xmax, ymin, ymax, diag =  False, combos = None):
 
     @cache
     def result(coord):
-        result = set()
+        out = set()
         for shift in shifts:
             new = shift + coord
-            if xmin <= new.real <= xmax and ymin <= new.imag <= ymax:
-                result.add(new)
+            if (xmin <= new.real <= xmax) and (ymin <= new.imag <= ymax):
+                out.add(new)
 
-        return frozenset(result)
+        return frozenset(out)
     
     return result
 
 def scan_ints(line):
     return map(int, re.split(r"\s+", line))
+
+def sort_complex(z):
+    return (z.real, z.imag)

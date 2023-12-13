@@ -1,13 +1,9 @@
-# (1, 0) -> right
-# (-1, 0) -> left
-# (0, -1) -> up
-# (0, 1) -> down
 from collections import deque
-from functools import cache
-from itertools import chain
 from itertools import product
 from math import ceil
+from operator import attrgetter
 
+from utils.utils import neighbors
 from utils.utils import split_lines
 
 directions = {
@@ -25,28 +21,63 @@ directions = {
     ("7", 0, -1): (-1, 0),
 }
 
+conversions = {
+    "|": {1, 1 + 1j, 1 + 2j},
+    "-": {0 + 1j, 1 + 1j, 2 + 1j},
+    "F": {1 + 1j, 2 + 1j, 1 + 2j},
+    "J": {1, 1j, 1 + 1j},
+    "L": {1, 1 + 1j, 2 + 1j},
+    "7": {1j, 1 + 1j, 1 + 2j},
+    ".": set(),
+}
 
-def neighbors(xmin, xmax, ymin, ymax, diag=False, combos=None):
-    """Cartesian neighbors"""
-    if combos is None:
-        combos = product(range(-1, 2), range(-1, 2))
-    # Each combination of 1-step movements
-    shifts = {
-        (x, y) for x, y in combos if (x != 0 or y != 0) and (diag or (x == 0 or y == 0))
-    }
-    print(shifts)
 
-    @cache
-    def result(coord):
-        result = set()
-        for shift in shifts:
-            new = (shift[0] + coord[0], shift[1] + coord[1])
-            if xmin <= new[0] <= xmax and ymin <= new[1] <= ymax:
-                result.add(new)
+def convert_grid(grid):
+    result = {}
+    multiplier = 3
+    # 3 by 3 outputs
+    # Don't count subtiles adjacent to main loop
+    for y, line in enumerate(grid):
+        for x, char in enumerate(line):
+            xnew = x * multiplier
+            ynew = y * multiplier
+            offset = complex(xnew, ynew)
+            conversion = conversions[char]
+            closed = char != "."
 
-        return frozenset(result)
+            for coord in product(range(multiplier), range(multiplier)):
+                coord = complex(*coord)
+                result[offset + coord] = closed and coord in conversion
 
+    nrow = len(grid) * multiplier
+    ncol = len(grid[0]) * multiplier
+
+    # TODO 
+    # Find enclosed in loop
+    # Get every tile enclosed in loop using vertical slices
+    # Count these tiles in enclosed set
+    for i in range(ncol + 1):
+        result[complex(i, nrow)] = False
+    for i in range(nrow + 1):
+        result[complex(ncol, i)] = False
     return result
+
+
+def infer_start(start_dirs, end_dirs):
+    
+    match (start_dirs, end_dirs):
+        case ((-1, 0), (-1, 0)) | ((1, 0), (1, 0)):
+            return "-"
+        case ((-1, 0), (0, -1)) | ((0, 1), (1, 0)):  # left-up
+            return "L"
+        case ((-1, 0), (0, 1)) | ((0, -1), (1, 0)):
+            return "F"
+        case ((0, 1), (0, 1)) | ((0, -1), (0, -1)):
+            return "|"
+        case ((0, 1), (-1, 0)) | ((1, 0), (0, -1)):  # down-left
+            return "J"
+        case ((0, -1), (-1, 0)) | ((1, 0), (0, 1)):  # up-left
+            return "7"
 
 
 def loop_size(start, grid):
@@ -55,8 +86,7 @@ def loop_size(start, grid):
     xmax = len(grid[0]) - 1
     ymax = len(grid) - 1
     dist = 0
-    traversed = set()
-    traversed.add(start)
+    traversed = {complex(x, y)}
 
     # Find first valid direction, TRBL order
     if y > ymin and grid[y - 1][x] in ("|", "F", "7"):
@@ -73,23 +103,26 @@ def loop_size(start, grid):
         ydir = 0
     else:
         raise ValueError("No valid directions")
+    start_dirs = (xdir, ydir)
 
-
-    first = grid[y + ydir][x + xdir]
     while True:
-        # All four spaces in 
+        # All four spaces in
         x += xdir
         y += ydir
+        traversed.add(complex(x, y))
         char = grid[y][x]
         dist += 1
 
         if char == "S":
+            end_dirs = (xdir, ydir)
+
+            start = infer_start(end_dirs, start_dirs)
+            print(start)
+
+            # TODO stop cheating
+            # Just order neighbor coords left and match case
+            grid[y] = grid[y].replace("S", start)
             return ceil(dist / 2), traversed
-        # TODO: allow movement onto pipe tiles, but not THROUGH them 
-        # Move laterally in spaces between pipes
-        # How to handle?
-        # Infer S piece type from first, last piece directions
-                additions = 
         xdir, ydir = directions[(char, xdir, ydir)]
 
 
@@ -102,54 +135,134 @@ def find_start(lines):
             continue
 
 
-def force_int(t):
-    return tuple(map(int, t))
+def downscale(t, factor):
+    return complex(t.real // factor, t.imag // factor)
 
 
-def flood_fill(grid, barriers, xmin, xmax, ymin, ymax):
-    queue = deque()
+def flood_fill(grid, xmin, xmax, ymin, ymax, get_neighbors, traversed):
+    exposed = set()
     enclosed = set()
-    # Which must be non-enclosed
-    border = chain(
-        product(range(xmin, xmax + 1), (ymin,)),
-        product((xmax,), range(ymin, ymax + 1)),
-        product(range(xmin, xmax + 1), (ymax,)),
-        product((xmin,), range(ymin, ymax + 1)),
-    )
-    deltas = ((0.5, 0), (0, 0.5), (0.5, 0), (0, 0.5))
-
-    for i, coord in enumerate(border):
-        delta = deltas[i // 4]
-        if not (coord in barriers):
-            queue.append(coord)
-        beside = (coord[0] + delta[0], coord[1] + delta[1])
-        if not (beside in barriers):
-            queue.append(beside)
+    all = {
+        complex(x, y) for x, y in product(range(xmin, xmax + 1), range(ymin, ymax + 1))
+    }
+    assert all == set(grid.keys())
+    for coord, el in grid.items():
+        if (el and downscale(el, 3) not in traversed) or (coord in enclosed or coord in exposed):
+            continue
+        queue = deque()
+        queue.append(coord)
+        visited = set()
+        open = False
 
         while queue:
-            current = queue.pop()
-            new_neighbors = neighbor_finder(current)
-            for neighbor in new_neighbors:
-                if not (neighbor in barriers or neighbor in enclosed):
-                    queue.append(coord)
+            new = queue.pop()
+            visited.add(new)
+            open = open or (
+                new in exposed
+                or (
+                    new.real == xmin
+                    or new.real == xmax
+                    or new.imag == ymin
+                    or new.imag == ymax
+                )
+            )
+            new_neighbors = get_neighbors(new)
 
-    return (len(grid) * len(grid[0])) - len(set(map(force_int, barriers)))
+            for neighbor in new_neighbors:
+                # if neighbor in exposed:
+                #     open = True
+                if not ((grid[neighbor] and downscale(neighbor, 3) in traversed) or neighbor in visited):
+                    queue.append(neighbor)
+        if open:
+            exposed.update(visited)
+        else:
+            enclosed.update(visited)
+    #assert len(exposed) + len(enclosed) == len(grid) - sum(grid.values())
+    return enclosed
+
+
+def candidates(enclosed, traversed):
+    enclosed = {downscale(c, 3) for c in enclosed}
+    return enclosed - traversed
+
+
+def find_in_loop(enclosed, traversed, xmin, xmax, ymin, ymax):
+    result = 0
+
+    for coord in enclosed:
+        x = int(coord.real)
+        y = int(coord.imag)
+        found = False
+        for i in range(x + 1, xmax + 1):
+            if complex(i, y) in traversed:
+                found = True
+                break
+
+        if not found:
+            break
+        found = False
+
+        for i in range(x - 1, xmin - 1, -1):
+            if complex(i, y) in traversed:
+                found = True
+                break
+        if not found:
+            break
+        found = False
+
+        for j in range(y + 1, ymax + 1):
+            if complex(x, j) in traversed:
+                found = True
+                break
+        if not found:
+            break
+
+        found = False
+        for j in range(y - 1, ymin - 1, -1):
+            if complex(x, j) in traversed:
+                result += 1
+                break
+    return result
+
+
+def print_map(grid, xmax, ymax, special):
+    if not special:
+        special = set()
+    return "\n".join(
+        "".join(
+            "X" if complex(x, y) in special else "#" if grid[complex(x, y)] else "."
+            for x in range(xmax + 1)
+        )
+        for y in range(ymax + 1)
+    )
 
 
 raw = split_lines("inputs/day10.txt")
 start = find_start(raw)
 part1, traversed = loop_size(start, raw)
 print(part1)
+
 xmin = ymin = 0
-xmax = len(raw[0])
-ymax = len(raw)
-combos = product((-0.5, 0, 0.5), (-0.5, 0, 0.5))
-neighbor_finder = neighbors(xmin, xmax, ymin, ymax, diag=True)
-part2 = flood_fill(raw, traversed, xmin, xmax, ymin, ymax)
-print(part2)
+grid = convert_grid(raw)
+xmax = int(max(map(attrgetter("real"), grid.keys())))
+ymax = int(max(map(attrgetter("imag"), grid.keys())))
+neighbor_finder = neighbors(xmin, xmax, ymin, ymax, diag=False)
+enclosed = flood_fill(grid, xmin, xmax, ymin, ymax, neighbor_finder, traversed)
+possible = candidates(enclosed, traversed)
+
 
 # Problems:
 # 1. Paths can exist between tiles if not blocked by pipe segments.
 # 2. S needs special treatment
 
 # Only count pipe segments as spaces if not part of loop
+# either
+# 1. Use original coords and allow walking on pipe tiles, but not crossing them
+# 2. Expand coords so pipes still can't be crossed but gaps are proper paths
+
+# Track inside/outside of each pipe piece and restrict moves accordingly?
+part2 = find_in_loop(possible, traversed, xmin, xmax // 3, ymin, ymax // 3)
+print(part2)
+
+# Find all enclosed apces not part of loop
+# For each, check if main loop coord at some distance in all cardinal directions
