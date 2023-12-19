@@ -49,17 +49,6 @@ def convert_grid(grid):
                 coord = complex(*coord)
                 result[offset + coord] = closed and coord in conversion
 
-    nrow = len(grid) * multiplier
-    ncol = len(grid[0]) * multiplier
-
-    # TODO 
-    # Find enclosed in loop
-    # Get every tile enclosed in loop using vertical slices
-    # Count these tiles in enclosed set
-    for i in range(ncol + 1):
-        result[complex(i, nrow)] = False
-    for i in range(nrow + 1):
-        result[complex(ncol, i)] = False
     return result
 
 
@@ -105,7 +94,8 @@ def loop_size(start, grid):
         raise ValueError("No valid directions")
     start_dirs = (xdir, ydir)
 
-    while True:
+    char = None
+    while char != "S":
         # All four spaces in
         x += xdir
         y += ydir
@@ -131,7 +121,7 @@ def find_start(lines):
         try:
             x = line.index("S")
             return x, y
-        except:
+        except ValueError:
             continue
 
 
@@ -142,10 +132,6 @@ def downscale(t, factor):
 def flood_fill(grid, xmin, xmax, ymin, ymax, get_neighbors, traversed):
     exposed = set()
     enclosed = set()
-    all = {
-        complex(x, y) for x, y in product(range(xmin, xmax + 1), range(ymin, ymax + 1))
-    }
-    assert all == set(grid.keys())
     for coord, el in grid.items():
         if (el and downscale(el, 3) not in traversed) or (coord in enclosed or coord in exposed):
             continue
@@ -177,7 +163,6 @@ def flood_fill(grid, xmin, xmax, ymin, ymax, get_neighbors, traversed):
             exposed.update(visited)
         else:
             enclosed.update(visited)
-    #assert len(exposed) + len(enclosed) == len(grid) - sum(grid.values())
     return enclosed
 
 
@@ -249,19 +234,7 @@ ymax = int(max(map(attrgetter("imag"), grid.keys())))
 neighbor_finder = neighbors(xmin, xmax, ymin, ymax, diag=False)
 enclosed = flood_fill(grid, xmin, xmax, ymin, ymax, neighbor_finder, traversed)
 possible = candidates(enclosed, traversed)
-
-
-# Problems:
-# 1. Paths can exist between tiles if not blocked by pipe segments.
-# 2. S needs special treatment
-
-# Only count pipe segments as spaces if not part of loop
-# either
-# 1. Use original coords and allow walking on pipe tiles, but not crossing them
-# 2. Expand coords so pipes still can't be crossed but gaps are proper paths
-
-# Track inside/outside of each pipe piece and restrict moves accordingly?
-part2 = find_in_loop(possible, traversed, xmin, xmax // 3, ymin, ymax // 3)
+part2 = len(possible)
 print(part2)
 
 # Find all enclosed apces not part of loop

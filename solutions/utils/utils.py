@@ -1,6 +1,8 @@
 from functools import cache
 from itertools import product
 import re
+from operator import attrgetter
+from math import inf
 
 def split_lines(path):
     with open(path) as f:
@@ -39,3 +41,24 @@ def scan_ints(line):
 
 def sort_complex(z):
     return (z.real, z.imag)
+
+def extrema(coords):
+    xmin = ymin = inf
+    xmax = ymax = -inf
+    for coord in coords:
+        xmin = min(xmin, coord.real)
+        ymin = min(ymin, coord.imag)
+        xmax = max(xmax, coord.real)
+        ymax = max(ymax, coord.imag)
+    return {"xmin" : int(xmin), "xmax": int(xmax), "ymin" : int(ymin), "ymax" : int(ymax)}
+
+def xmax(coords):
+    return max(coords, key = attrgetter("real")).real
+
+def ymax(coords):
+    return max(coords, key = attrgetter("imag")).imag
+
+@cache
+def manhattan(x, y):
+    return abs(x.real - y.real) + abs(x.imag - y.imag )
+
