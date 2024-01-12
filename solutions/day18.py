@@ -1,5 +1,4 @@
 from collections import deque
-from itertools import groupby
 from math import copysign
 
 import utils.utils as ut
