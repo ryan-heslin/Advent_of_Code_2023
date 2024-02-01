@@ -1,24 +1,32 @@
 from collections import defaultdict
-from collections import deque
-from itertools import chain
-from itertools import zip_longest
-from math import inf
 import heapq
+from math import inf
 
 import utils.utils as ut
 
-class ComparableComplex(complex):
 
+class ComparableComplex(complex):
 
     def __lt__(self, other):
         return abs(self) > abs(other)
 
-def interior(size):
-    return 2 * (size * (size - 1)) + 1
+# Standard quadratic approximation
+def lagrange(X, Y):
+    degree = 3
+    denoms = ((X[0] - X[1]) *(X[0] - X[2]), 
+              (X[1] - X[0]) * (X[1] - X[2]), 
+              (X[2] - X[0]) * (X[2] - X[1])
+              )
+    quadratic = sum(Y[i] / denoms[i] for i in range(degree))
+    linear = (-X[1] - X[2],  -X[0] - X[2] , -X[0] - X[1])
+    linear = sum((Y[i] * linear[i]) /denoms[i] for i in range(degree))
+    constant =(X[1] * X[2] , X[0] * X[2] , X[0] * X[1])
+    constant = sum((Y[i] * constant[i]) /denoms[i] for i in range(degree))
+    return quadratic, linear, constant
 
 
 def parse(lines):
-    result = defaultdict(lambda: False)
+    result = {}
     result.update(
         {
             complex(y, x): char == "#"
@@ -28,42 +36,12 @@ def parse(lines):
     )
     return result
 
-
-def add_border(graph):
-    extrema = ut.extrema(graph)
-    coords = chain(
-        zip_longest(
-            range(extrema["xmin"] - 1, extrema["xmax"] + 2),
-            (),
-            fillvalue=extrema["ymin"] - 1,
-        ),
-        zip_longest(
-            range(extrema["xmin"] - 1, extrema["xmax"] + 2),
-            (),
-            fillvalue=extrema["ymax"] + 1,
-        ),
-        zip_longest(
-            (),
-            range(extrema["ymin"] - 1, extrema["ymax"] + 2),
-            (),
-            fillvalue=extrema["xmin"] - 1,
-        ),
-        zip_longest(
-            (),
-            range(extrema["ymin"] - 1, extrema["ymax"] + 2),
-            (),
-            fillvalue=extrema["xmax"] + 1,
-        ),
-    )
-    return graph | {coord: False for coord in coords}
-
-
-def dijkstra(start, graph, max_dist, neighbors):
+def dijkstra(start, graph, max_dists, neighbors):
     queue = [(0, ComparableComplex(start))]
     heapq.heapify(queue)
-    dist = defaultdict(lambda: inf)
-    visited = set((0, ComparableComplex(start)))
-    paths = defaultdict(set)
+    visited = {(0, ComparableComplex(start))}
+    greatest = max(max_dists)
+    result = defaultdict(set)
     extrema = ut.extrema(graph)
     xrange = extrema["xmax"] - extrema["xmin"] + 1
     yrange = extrema["ymax"] - extrema["ymin"] + 1
@@ -72,22 +50,19 @@ def dijkstra(start, graph, max_dist, neighbors):
         try:
             dist, current = heapq.heappop(queue)
         except IndexError:
-            return paths
-        # TODO check if vertex of diamond
-        if (dist - 65) % 131 == 0:
-            paths[dist].add(current)
-        if dist == max_dist:
-            continue
+            return result
+        if dist in max_dists:
+            result[dist].add(current)
+            if dist == greatest:
+                continue
         dist += 1
 
         for neighbor in neighbors(current):
-            clamped_neighbor = neighbor.real % xrange, neighbor.imag % yrange
+            clamped_neighbor = complex(neighbor.real % xrange, neighbor.imag % yrange)
             new = (dist, ComparableComplex(neighbor))
-            if not (graph[clamped_neighbor]):
-                #visited.add(new)
+            if not (graph[clamped_neighbor] or new in visited):
+                visited.add(new)
                 heapq.heappush(queue, new)
-
-
 
 def find_start(lines):
     for y, line in enumerate(lines):
@@ -99,34 +74,21 @@ def find_start(lines):
 raw_input = ut.split_lines("inputs/day21.txt")
 graph = parse(raw_input)
 start = find_start(raw_input)
-neighbors = ut.neighbors(-inf, inf, -inf, inf)
 extrema = ut.extrema(graph)
+neighbors = ut.neighbors(-inf, inf, -inf, inf,  diag=False, combos=None)
 # Start has to be in dead center for trick to work
-extent = (extrema["xmax"] - extrema["xmin"] + 1) 
+extent = extrema["xmax"] - extrema["xmin"] + 1
 assert (
     start
     and start.real == extent // 2
     and start.imag == (extrema["ymax"] - extrema["ymin"] + 1) // 2
 )
 
-max_dist = 64
-part1 = len(dijkstra(start, graph, max_dist + 1, neighbors)[max_dist])
-print(part1)
-max_dist = 26501365
-iterations = max_dist   // extent
-offset = max_dist % extent
-# All fully explored
-inner_tiles = interior(max_dist)
-# Half explored
-border = max_dist
-# Plus tiles at cardinal extremes
-
-# raw_input = [" " * xmax] + raw_input + [" " * xmax]
-# raw_input = [" " + line + " " for line in raw_input]
-start = find_start(raw_input)
-graph = parse(raw_input)
-result = dijkstra(start, graph, 589 , neighbors)
-current = offset + extent
-print(result)
-# TODO frontier expands as diamond, and number of steps is multiple of grid size
-# note size when on edge of grid, find pattern, solve
+half = extent // 2
+data = dijkstra(start, graph, (half,            half + extent, half + extent * 2), neighbors)
+points = dict(zip(range(3), map(len, data.values())))
+coefs = lagrange(range(3), list(map(len, data.values())))
+final_dist = 26501365
+repeats = final_dist // extent
+part2 = int((coefs[0] * (repeats ** 2)) + (coefs[1] * repeats) + coefs[2])
+print(part2)

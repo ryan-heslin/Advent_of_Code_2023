@@ -167,6 +167,4 @@ directions[">"] = directions["v"] = directions["<"] = directions["^"] = directio
 neighbors = make_neighbors(graph, directions)
 reduced = reduce_graph(graph, start, goal, neighbors)
 part2 = solve(reduced, start, goal)
-#part2 = dijkstra(graph, start, goal, part1, neighbors)
-# 6490
 print(part2)

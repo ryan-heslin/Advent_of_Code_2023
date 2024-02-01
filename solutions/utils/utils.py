@@ -22,7 +22,6 @@ def neighbors(xmin, xmax, ymin, ymax, diag =  False, combos = None):
         combos = product(range(-1, 2), range(-1, 2))
     # Each combination of 1-step movements
     shifts = {complex(x, y) for x, y in combos if (x != 0 or y != 0) and (diag or (x== 0 or y == 0))}
-    print(shifts)
 
     @cache
     def result(coord):
