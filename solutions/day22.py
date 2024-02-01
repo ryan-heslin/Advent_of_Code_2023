@@ -1,14 +1,9 @@
-# For each brick, determine if:
-# 1. Any bricks above rest on it
-# Those bricks rest on no other brick
-import typing
-from collections import namedtuple
+from functools import reduce
+from operator import itemgetter
 from itertools import chain
 
 from utils.utils import split_lines
 
-# TODO
-# Make named tuple subclass to rely on namedtuple's hash
 class Coord(tuple):
     def update(self, key, value):
         return __class__(chain(self[:key], (value,), self[key + 1 :]))
@@ -36,88 +31,51 @@ def coord_range(start, end):
     assert start[axis] <= end[axis]
     return {start.update(axis, val) for val in range(offset, end[axis] + 1)}
 
-
-class Brick:
-    def __init__(self, coords):
-        # Is brick horizontal or vertical?
-        self.coords = coords
-
-    def __repr__(self):
-        return self.coords.__repr__()
-
-        # def below(self):
-        #     """All in all, you're just another part of the brick pile"""
-        #     if self.first.z == 0:
-        #         raise ValueError
-        #     if self.axis == 2:
-        #         yield first.lower()
-        #     start = first.lower()
-        #     for i in range(self.first[self.axis], self.second[self.axis] + 1):
-        #         yield start.update(self.axis, i + start)
-
-    def __in__(self, coord):
-        return coord in self.coords
-
-    # def lower(self, container):
-    #     if self.first.z <= 1:
-    #         raise ValueError
-    #     return __class__(
-    #         self.first.update(2, self.first.z - 1),
-    #         self.second.update(2, self.second.z - 1),
-    #         container
-    #     )
-    #
-    # # def update(self):
-    #     self.container.update(self.coords)
-    #
-    # def discard(self):
-    #     self.container.discard(self.coords)
-    #
+def get_bricks(bricks):
+    return reduce( set.union, bricks)
 
 
 def parse(line):
     parts = line.split("~")
     return Coord(map(int, parts[0].split(","))), Coord(map(int, parts[1].split(",")))
 
+def lowest_z(coords):
+    return min(coords, key = itemgetter(-1))[-1]
+
 
 def fall(bricks, contained):
-    undone = set(bricks.keys())
-    fallen = True
-    #breakpoint()
-    # Just move all in ascending z order
-    this_bricks = list(bricks.items())
-    while fallen:
-        this_bricks = sorted(this_bricks, key = lambda x: x[1][1::-1])
-        fallen = False
+    result = {}
 
-        for i in range(len(this_bricks)):
-            # Track coordinate changes and bricks done moving
-            # if id not in undone:
-            #     new_bricks[id] = brick
-            #     continue
-            index, brick = this_bricks[i]
-            new_coords = set()
-            for c in brick:
-                new = c - 1
-                # Can't fall any further
-                if (new in contained and new not in brick) or new[2] < 1:
-                    print(brick)
-                    print(bricks, "\n\n")
-                    # undone.remove(id)
+    bricks = list(sorted(bricks.items(), key = lambda x: lowest_z(x[1])))
+    # Make each brick fall in ascending order
+    fallen = 0
+
+    for pair in bricks:
+        id, brick = pair
+        current= set(brick)
+        contained -= current
+        z_level = lowest_z(brick)
+        done = started = False
+
+        while z_level > 1 and not done:
+            new = set()
+            for coord in current:
+                new_coord = coord - 1
+                if new_coord in contained:
+                    done = True
                     break
-                new_coords.add(new)
+                new.add(new_coord)
             else:
-                fallen = True
-                this_bricks[index][1] = new_coords
-                contained -= brick
-                contained |= new_coords
+                started = True
+                z_level -= 1
+                current = new
 
-    return dict(bricks)
-
+        fallen += started
+        result[id] = current
+        contained |= current
+    return result, fallen
 
 def count_not_supporting(bricks):
-    # How many bricks don't support any others?
-    # How many bricks aren't the only brick keeping at least one brick from falling
     mapping = {}
     alone = set()
     for id, brick in bricks.items():
@@ -128,32 +86,30 @@ def count_not_supporting(bricks):
         for coord in brick:
             if coord[2] == 1:
                 break
-            new = coord.update(2, coord[2] - 1)
+            new = coord - 1
             supporting = mapping.get(new)
             if supporting is not None and supporting != id:
                 below.add(supporting)
         if len(below) == 1:
             alone.update(below)
-    return len(alone)
+    return len(bricks) - len(alone)
 
 
 raw_input = split_lines("inputs/day22.txt")
 parsed = list(map(parse, raw_input))
 contained = set()
 bricks = {i: coord_range(*line) for i, line in enumerate(parsed)}
-for brick in bricks.values():
-    contained |= brick
-# breakpoint()
-print(bricks)
-bricks = fall(bricks, contained)
+contained = get_bricks(bricks.values())
+bricks, _ = fall(bricks, contained)
 part1 = count_not_supporting(bricks)
 print(part1)
 
-# Expected
-# A    (1, 0, 1)    (1, 2, 1)
-# C    (0, 2, 2)    (2, 2, 2)
-# B    (0, 0, 2)    (2, 0, 2)
-# E    (2, 0, 3)    (2, 2, 3)
-# D    (0, 0, 3)    (0, 2, 3)
-# F    (0, 1, 4)    (2, 1, 4)
-# G    (1, 1, 5)    (1, 1, 6)
+part2 = 0
+contained = get_bricks(bricks.values())
+
+for id in list(bricks.keys()):
+    removed = bricks[id]
+    bricks.pop(id)
+    part2 += fall(bricks, contained - removed)[1]
+    bricks[id] = removed
+print(part2)
