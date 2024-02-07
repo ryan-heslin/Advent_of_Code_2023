@@ -8,7 +8,7 @@ from utils.utils import split_lines
 
 # .
 @cache
-def decide_dot(group_index, group_size, n_groups, target_length):
+def decide_dot(group_index, group_size, _, target_length):
     # Not in group
     if group_size == 0:
         return (group_index, group_size)
@@ -45,7 +45,6 @@ def bfs(string, groups):
     last = {start: 1}
     choices = {".": (decide_dot,), "#": (decide_hash,), "?": (decide_dot, decide_hash)}
 
-    # Dict of states to add to count?
     for char in string:
         next = defaultdict(lambda: 0)
         choosers = choices[char]
@@ -64,7 +63,6 @@ def bfs(string, groups):
     return sum(v for k, v in last.items() if k in correct)
 
 
-# Multiply by recursive call to remaining string
 def reparse(data, n=5):
     return [["?".join([l[0]] * n), l[1] * n] for l in data]
 

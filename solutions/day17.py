@@ -42,7 +42,6 @@ def A_star(graph, start, max_straight, min_turn_time):
     move_threshold = max_straight - min_turn_time
     xmax = int(max(graph.keys(), key=attrgetter("real")).real)
     ymax = int(max(graph.keys(), key=attrgetter("imag")).imag)
-    # goal = complex(xmax, ymax)
     goal = complex(xmax, ymax)
 
     dist = defaultdict(lambda: inf)
@@ -85,7 +84,6 @@ def A_star(graph, start, max_straight, min_turn_time):
             continue
         this_traversed = current.traversed + graph[new_coord]
         new_remaining = current.remaining - 1
-        #current_hash = hash(current)
         key = (new_coord, current.direction, new_remaining)
 
         if not (
@@ -99,9 +97,7 @@ def A_star(graph, start, max_straight, min_turn_time):
         if new_coord == goal and new_remaining <= move_threshold:
             answer = this_traversed
             continue
-        # Going left/right
 
-        # print(current)
         if new_remaining <= move_threshold:
             for dir in directions[bool(current.direction.real)]:
                 add_neighbor(new_coord, dir, this_traversed, max_straight)

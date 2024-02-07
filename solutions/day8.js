@@ -38,6 +38,7 @@ function lcm(a, b){
 }
 
 // TO generically find cycle: find repeat of direction index and node
+// Some Reddit conversation on this point I copied for later
 //[–]evouga 5 points 5 hours ago 
 
 // You are right that it’s not purely CRT, if a ghost encounters multiple ??Z nodes along its cycle. But for each choice of ??Z node encountered by each ghost, you can use CRT to solve for the time all ghosts hit their chosen node (and the final answer is the minimum over those choices)
@@ -47,8 +48,6 @@ function lcm(a, b){
 // [–]taylorott 2 points 5 hours ago 
 //
 // ^ This right here. One thing to note is that any given ??Z node encountered by a ghost could potentially correspond to multiple remainders (since a true period must be divisible by the the LR string length), which is another thing to that must be iterated over when searching for the minimum.
-    // Maybe CRT? Assume cycle lengths are coprime
-// CRT over Cartesian product of cycles
 function solve_ghost(directions, indices, targets){ 
     let periods = targets.map((x) => find(directions, indices, x, (x) => x.substr(2, 3) == "Z"))
     return periods.reduce(lcm);
@@ -63,6 +62,5 @@ console.log(part1);
 
 
 let starts = [...Object.keys(directions)].filter((x) => x.substring(2, 3) == "A");
-console.log(starts)
 const part2 = solve_ghost(directions, indices, starts)
 console.log(part2)

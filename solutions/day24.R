@@ -14,17 +14,12 @@ find_intersection <- function(pair, low, high) {
         return()
     }
     intersection <- A_pos + A_vel * solution[[1]]
-    # print(intersection)
+
     if (all((intersection >= low) & (intersection <= high))) {
         intersection
     } else {
         return()
     }
-    # if (!is.null(solution) && !all((A_pos[-3] + A_vel[-3] * solution[[1]]) == (B_pos[-3] + B_vel[-3] * solution[[2]]) ) stop()
-    # solution <- (solve(t(A) %*% A) %*% t(A)) %*% b
-    # if (all(A %*% solution) == b) {
-    #     A_pos[-3] + A_vel[-3] * solution[[1]]
-    # }
 }
 
 to_int <- function(string) {
@@ -57,22 +52,10 @@ make_row <- function(pair, first, second) {
     c(d2_prime - d2, d1 - d1_prime, c2 - c2_prime, c1_prime - c1, rhs)
 }
 
-full_rank <- function(X) {
-    tryCatch(
-        {
-            solve(t(X) %*% X)
-            TRUE
-        },
-        error = function(e) FALSE
-    )
-}
-
 find_coord <- function(pairs, first, second) {
     equations <- c()
-    # browser()
     for (pair in pairs) {
         row <- make_row(pair, first, second)
-        # print(row)
         new <- rbind(equations, row)
         if (qr(new)[["rank"]] == nrow(new)) {
             equations <- new
@@ -100,5 +83,6 @@ part1 <- lapply(pairs, find_intersection, low = lower, high = upper) |>
     vapply(Negate(is.null), FUN.VALUE = logical(1)) |>
     sum()
 print(part1)
+
 part2 <- solve_part2(pairs)
 print(sum(part2))

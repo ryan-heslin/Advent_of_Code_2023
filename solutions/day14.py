@@ -1,8 +1,6 @@
 from collections import OrderedDict
 from copy import deepcopy
 from enum import Enum
-from itertools import cycle
-from operator import attrgetter
 
 from utils.utils import split_lines
 
@@ -57,7 +55,6 @@ def predict(grid):
             grid, load = total_load(grid, offset)
         hash = frozenset(zip(grid.keys(), grid.values()))
         if hash in results:
-            print(load)
             return results, tuple(i for i, k in enumerate(results.keys()) if k == hash)
         results[hash] = load
 

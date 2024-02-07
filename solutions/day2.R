@@ -13,7 +13,6 @@ parse_pairs <- function(pairs) {
 
 parse_line <- function(line) {
     line <- sub("^Game \\d+:\\s+", "", line)
-    # browser()
     draws <- strsplit(line, ";\\s+") |> unlist()
     pairs <- strsplit(draws, ",\\s+")
     lapply(pairs, parse_pairs) |>
@@ -21,8 +20,7 @@ parse_line <- function(line) {
 }
 
 validate <- function(game, combo) {
-    # combo <- matrix(combo, ncol = ncol(game))
-    min(-(game - combo)) >= 0
+    min(combo - game) >= 0
 }
 
 power <- function(game) {
@@ -35,9 +33,8 @@ raw <- readLines("inputs/day2.txt")
 processed <- lapply(raw, parse_line)
 
 included <- c(red = 12, green = 13, blue = 14)
-ids <- seq_along(processed)
-valid <- vapply(ids, \(x) validate(processed[[x]], included), FUN.VALUE = logical(1))
-part1 <- sum(ids[valid])
+valid <- vapply(processed, validate, combo = included, FUN.VALUE = logical(1))
+part1 <- sum(which(valid))
 print(part1)
 
 part2 <- vapply(processed, power, FUN.VALUE = numeric(1)) |>

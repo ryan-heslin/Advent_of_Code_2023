@@ -1,6 +1,4 @@
 from dataclasses import dataclass
-from itertools import combinations
-from math import inf
 
 import utils.utils as ut
 
@@ -27,7 +25,6 @@ class Mappings:
     def __init__(self, data, seeds, reverse = False):
         self.intervals = []
         self.seeds = seeds
-        # self.constant = 0
         for group in data:
             result = self.parse_interval(group, reverse = reverse)
             self.intervals.append(result)
@@ -131,8 +128,3 @@ for i in range(1, len(targets), 2):
 pairs.sort()
 part2 = solve_part2(raw, pairs)
 print(part2)
-
-
-
-# Binary search intervals?
-# Combine intervals

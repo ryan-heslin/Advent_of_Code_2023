@@ -11,7 +11,8 @@ print(part1)
 
 nums = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
 n = len(nums)
-parts = "|".join(nums + [naturals])
+nums.append(naturals)
+parts = "|".join(nums)
 pattern = f"(?=({parts}))"
 chars = list(map(str, range(1, 1 + n)))
 keys = dict(zip(nums, chars))

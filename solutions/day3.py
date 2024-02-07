@@ -11,7 +11,6 @@ class Number:
     def __add__(self, other):
         self.coords.update(other.coords)
         self.val *= 10
-        # ceil(log10(other.val))
         self.val += other.val
         return self
 

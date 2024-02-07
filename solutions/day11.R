@@ -1,10 +1,10 @@
 distance <- function(pair, empty_rows, empty_cols, iterations = 1) {
-    # browser()
     pair <- rbind(pair[[1]], pair[[2]])
-    # if (all(sort(pair[, 1]) == c(1, 9))) browser()
     xes <- sort(pair[, 2])
     ys <- sort(pair[, 1])
-    sum(abs(pair[1, ] - pair[2, ])) + (iterations * (sum(empty_cols > xes[[1]] & empty_cols < xes[[2]]) + sum(empty_rows > ys[[1]] & empty_rows < ys[[2]])))
+    sum(abs(pair[1, ] - pair[2, ])) +
+        (iterations * (sum(empty_cols > xes[[1]] & empty_cols < xes[[2]]) +
+            sum(empty_rows > ys[[1]] & empty_rows < ys[[2]])))
 }
 
 solve <- function(grid, iterations = 1) {
@@ -12,7 +12,9 @@ solve <- function(grid, iterations = 1) {
     rows <- which(rowSums(grid) == 0)
     cols <- which(colSums(grid) == 0)
     asplit(pairs, MARGIN = 1) |>
-        combn(m = 2, FUN = \(x) distance(x, rows, cols, iterations = iterations)) |>
+        combn(m = 2, FUN = \(x) distance(x, rows, cols,
+            iterations = iterations
+        )) |>
         sum()
 }
 
@@ -20,7 +22,6 @@ raw <- readLines("inputs/day11.txt") |>
     strsplit(split = "") |>
     do.call(what = rbind)
 raw <- raw == "#"
-# class(raw) <- "integer"
 part1 <- solve(raw)
 print(part1)
 

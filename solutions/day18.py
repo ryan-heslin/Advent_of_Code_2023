@@ -1,6 +1,3 @@
-from collections import deque
-from math import copysign
-
 import utils.utils as ut
 
 
@@ -32,74 +29,12 @@ def get_vertices(lines):
     return vertices, length + ut.manhattan(current, vertices[0])
 
 
-def shrink(num):
-    return num - copysign(1, num)
-
-
 def shoelace(vertices):
     return 0.5 * sum(
         (left.real * right.imag) - (left.imag * right.real)
         for left, right in zip(vertices, vertices[1:] + [vertices[0]])
     )
     
-
-
-def draw_border(lines):
-    current = 0
-    vertices = {current}
-    mapping = {"U": -1j, "R": 1, "D": 1j, "L": -1}
-    for line in lines:
-        direction = mapping[line[0]]
-        target = line[1]
-        for _ in range(target):
-            current += direction
-            vertices.add(current)
-    return vertices
-
-
-def flood_fill(border):
-    extrema = ut.extrema(border)
-    directions = {-1j, 1, 1j, -1}
-    # So polygon borders not on edges
-    extrema["xmin"] -= 1
-    extrema["xmax"] += 1
-    extrema["ymin"] -= 1
-    extrema["ymax"] += 1
-    outside = set()
-
-    for i in range(extrema["xmin"], extrema["xmax"] + 1):
-        for j in range(extrema["ymin"], extrema["ymax"] + 1):
-            current = complex(i, j)
-            if current in outside or current in border:
-                continue
-            queue = deque([complex(i, j)])
-            inside = True
-            visited = {current}
-
-            #breakpoint()
-            if current == 4j:
-                breakpoint()
-            while queue:
-                current = queue.pop()
-                for direction in directions:
-                    neighbor = direction + current
-                    if neighbor in border or neighbor in visited :
-                        continue
-                    # Outside polygon
-                    if not (
-                        extrema["xmin"] <= neighbor.real <= extrema["xmax"]
-                        and extrema["ymin"] <= neighbor.imag <= extrema["ymax"]
-                    ):
-                        inside = False
-                    elif neighbor not in visited:
-                        visited.add(neighbor)
-                        queue.append(neighbor)
-                        
-            if inside:
-                return border | visited
-            else:
-                outside = visited
-    return border
 
 # Pick's theorem
 def pick(interior, border):

@@ -3,9 +3,6 @@ from collections import deque
 from math import prod
 
 from utils.utils import split_lines
-# Part 2: Watch module rx
-# Each module has input queue; processed on activation
-#TODO: each processed pulse sends pulse to output's input queue
 
 class Module():
 
@@ -66,7 +63,6 @@ def pulse(data, iterations):
 
     for _ in range(iterations):
         # Only one set of pulses in queue at once
-        #Separate received pulse queue for each input?
         queue = deque([ ("broadcaster", "", False) ])
         while queue:
             new = deque()
@@ -107,7 +103,6 @@ def read_number(start, ends, data):
             else:
                 next = o
         num += digit
-        #assert next is not None
         current = next
 
     return int(num[-1::-1], 2)
@@ -121,13 +116,3 @@ targets = set(find_targets(data, end))
 nums = [ read_number(num, targets, data) for num in data["broadcaster"].outputs]
 part2 = prod(nums)
 print(part2)
-
-# TODO:
-    #prod = 1
-    # For each broadcast output:
-        # For each module in circle:
-            # If outputs of final output of circle:
-                # Add 1
-            # Else
-                # Add 0
-            # Reverse, read binary, multiply by prod

@@ -1,8 +1,5 @@
 from collections import defaultdict
-from dataclasses import dataclass
-from functools import cache
 from itertools import chain
-from math import inf
 from operator import attrgetter
 
 from utils.utils import split_lines
@@ -52,7 +49,6 @@ def simulate_beam(grid, start, initial):
             (coord, frozenset(d)) 
             for coord, d in new.items()
         )
-        # print(hashed)
         if hashed in seen:
             break
         seen.add(hashed)
@@ -76,8 +72,6 @@ def maximize_energy(grid):
 # Non-naive way:
     # For each mirror, get next mirror (or none, if pointing away) in each direction of reflection
     # Greedily track each beam's course, stopping once in a loop or leaving grid. Memoize this
-
-
 raw = split_lines("inputs/day16.txt")
 grid = parse(raw)
 xmax = int(max(grid.keys(), key=attrgetter("real")).real)

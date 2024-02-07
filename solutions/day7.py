@@ -18,8 +18,6 @@ class Hand:
     n_cards = 5
 
     def __init__(self, cards, suits, joker=False):
-        # if joker:
-        #     breakpoint()
         self.cards = tuple(suits[c] for c in cards)
         self._count = Counter(cards)
         self.rank = self.ranks[tuple(sorted(self._count.values(), reverse=True))]
@@ -35,10 +33,6 @@ class Hand:
                     self.rank = 5
                 case (3, 2):
                     self.rank = 6
-                # should be impossible
-                case (3, 3):
-                    print("check")
-                    self.rank = 7
                 # 3 of a kind
                 case (4, 1) | (4, 3):
                     self.rank = 6
@@ -52,8 +46,6 @@ class Hand:
 
     def __repr__(self) -> str:
         return str(self.cards)
-
-    # Jokers act as weakest for hand comparison, strongest for hand type
 
 
 def solve(hands, points):

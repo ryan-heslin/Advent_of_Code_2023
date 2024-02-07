@@ -2,6 +2,7 @@ from collections import deque
 from itertools import product
 from math import ceil
 from operator import attrgetter
+from functools import cache
 
 from utils.utils import neighbors
 from utils.utils import split_lines
@@ -36,7 +37,6 @@ def convert_grid(grid):
     result = {}
     multiplier = 3
     # 3 by 3 outputs
-    # Don't count subtiles adjacent to main loop
     for y, line in enumerate(grid):
         for x, char in enumerate(line):
             xnew = x * multiplier
@@ -107,10 +107,6 @@ def loop_size(start, grid):
             end_dirs = (xdir, ydir)
 
             start = infer_start(end_dirs, start_dirs)
-            print(start)
-
-            # TODO stop cheating
-            # Just order neighbor coords left and match case
             grid[y] = grid[y].replace("S", start)
             return ceil(dist / 2), traversed
         xdir, ydir = directions[(char, xdir, ydir)]
@@ -125,6 +121,7 @@ def find_start(lines):
             continue
 
 
+@cache
 def downscale(t, factor):
     return complex(t.real // factor, t.imag // factor)
 
@@ -132,6 +129,7 @@ def downscale(t, factor):
 def flood_fill(grid, xmin, xmax, ymin, ymax, get_neighbors, traversed):
     exposed = set()
     enclosed = set()
+
     for coord, el in grid.items():
         if (el and downscale(el, 3) not in traversed) or (coord in enclosed or coord in exposed):
             continue
@@ -236,6 +234,3 @@ enclosed = flood_fill(grid, xmin, xmax, ymin, ymax, neighbor_finder, traversed)
 possible = candidates(enclosed, traversed)
 part2 = len(possible)
 print(part2)
-
-# Find all enclosed apces not part of loop
-# For each, check if main loop coord at some distance in all cardinal directions

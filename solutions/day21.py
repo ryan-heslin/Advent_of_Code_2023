@@ -86,7 +86,6 @@ assert (
 
 half = extent // 2
 data = dijkstra(start, graph, (half,            half + extent, half + extent * 2), neighbors)
-points = dict(zip(range(3), map(len, data.values())))
 coefs = lagrange(range(3), list(map(len, data.values())))
 final_dist = 26501365
 repeats = final_dist // extent

@@ -6,47 +6,6 @@ from math import inf
 from utils.utils import split_lines
 
 
-def print_path(path, graph):
-    return "\n".join(
-        "".join(
-            graph[complex(x, y)] if complex(x, y) not in path else "O"
-            for x in range(23)
-        )
-        for y in range(23)
-    )
-
-
-def get_path(graph, start):
-    current = start
-    queue = []
-    inside = True
-
-    while inside:
-        queue.append(current)
-        for dir in {-1, 1, 1j, -1j}:
-            new = dir + current
-            try:
-                char = graph[int(new.imag)][int(new.real)]
-            except:
-                continue
-            if char == "O" and new not in queue:
-                current += dir
-                break
-        else:
-            inside = False
-
-    return queue
-
-
-def mark_path(lines):
-    return {
-        complex(x, y)
-        for y, line in enumerate(lines)
-        for x, char in enumerate(line)
-        if char in {"S", "O"}
-    }
-
-
 def find_start(lines, reverse=False):
     loop = reversed(list(enumerate(lines))) if reverse else enumerate(lines)
     for y, line in loop:
@@ -129,7 +88,7 @@ def solve(graph, start, goal):
     return result
 
 
-def dijkstra(graph, start, goal, threshold, neighbors):
+def dijkstra(start, goal, threshold, neighbors):
     queue = deque([(set(), start)])
     part1 = threshold
 
@@ -159,7 +118,7 @@ start = find_start(raw_input)
 goal = find_start(raw_input, reverse=True)
 graph = parse(raw_input)
 neighbors = make_neighbors(graph, directions)
-part1 = dijkstra(graph, start, goal, -inf, neighbors)
+part1 = dijkstra( start, goal, -inf, neighbors)
 print(part1)
 
 

@@ -62,8 +62,6 @@ function arrange(lenses){
 }
 
 const raw_input = fs.readFileSync('inputs/day15.txt', 'utf-8').toString().replace("\n", "").split(",");
-const part1 = raw_input.map(HASH).reduce((x, y) => x +y)
-console.log(part1);
-parts = arrange(raw_input);
+const parts = arrange(raw_input);
 console.log(parts[0]);
 console.log(parts[1]);
