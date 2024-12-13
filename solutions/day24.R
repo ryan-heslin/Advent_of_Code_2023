@@ -1,8 +1,8 @@
 setClass("Rational", 
-         slots = c(numerators = "integer", 
-         denominators = "integer", dim = "integer"), 
-         prototype = list(numerators  = 0L, 
-         denominators = 1L,  dim = 1L)
+         slots = c(numerators = "array", 
+         denominators = "array", dim = "integer"), 
+         #prototype = list(numerators  = 0L, 
+         #denominators = 1L,  dim = 1L)
 )
 setValidity("Rational", function(object){
     num_length <- if(is.matrix(object@numerators)) dim(object@numerators) else length(object@numerators)
@@ -32,7 +32,8 @@ denom_length <- if(is.matrix(denominators)) dim(denominators) else length(denomi
     names(numerators) <- NULL
     names(denominators) <- NULL
     dims <- if(is.matrix(denominators)) dim(denominators) else length(denominators)
-    new("Rational", numerators = numerators, denominators = denominators, dim = dims)
+    new("Rational", numerators = numerators, denominators = denominators, dim = dims)  |> 
+        simplify()
 }
 
  #setGeneric("dim", function(x) standardGeneric("dim"))
@@ -48,7 +49,8 @@ setMethod("denominators", "Rational", function(x) x@denominators)
 setMethod("denominators<-", "Rational", function(x, value) Rational(x@numerators, value))
 setMethod("dim", "Rational", function(x) x@dim  )
 setMethod("simplify", "Rational", function(x){ 
-    gcds <- mapply(numerators(x), denominators(x), FUN = gcd, SIMPLIFY = FALSE)
+    gcds <- mapply(numerators(x), denominators(x), FUN = gcd)
+    dim(gcds) <- x@dim
     x@numerators <- x@numerators %/% gcds
     x@denominators <- x@denominators %/% gcds
     validObject(x)
@@ -60,8 +62,9 @@ setMethod("simplify", "Rational", function(x){
     dims <- dim(object)
     left <- as.character(object@numerators)
     right <- as.character(object@denominators)
-    paste0(left, "/", right)
-    
+    combined <- matrix(paste0(left, "/", right), nrow = dims[[1]])
+    print(combined)
+    invisible()
 })
 
 gcd <- function(a, b){
@@ -95,8 +98,8 @@ complex(real = (Re(x) * Im(y)) + ((Im(x) * Re(y))), imaginary = Im(x) * Im(y))
 
 rref <- function(A){
     pivot <- 1
-    n <- nrow(A)
-    m <- ncol(A)
+    n <- dim(A)[[1]]
+    m <- dim(A)[[2]]
     numerators <- A 
     # Real is numerator, imag is denominator
     result <- A + 1i
